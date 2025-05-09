@@ -1780,7 +1780,7 @@ async def auto_filter(client, msg, spoll=False):
                 return
             if len(message.text) < 100:
                 search = message.text
-                m=await message.reply_sticker(sticker="CAACAgIAAxkBAAEVugJljpdfkszexOUZu8hPjuPKty8ZmAACdxgAAqPjKEmMVSFmXGLogR4E",
+                m=await message.reply_sticker(sticker="CAACAgQAAxkBAAIH52geXZwKM_EU6DFulu3CClLGrfpPAAJ9CgACv9i5UQP6CfFALqk1HgQ",
                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🅿︎🅻︎🅴︎🅰︎🆂︎🅴︎  🆆︎🅰︎🅸︎🆃︎", url=CHNL_LNK)]]))
                 search = search.lower()
                 find = search.split(" ")
@@ -1800,7 +1800,7 @@ async def auto_filter(client, msg, spoll=False):
                 if not files:
                     await m.delete()
                     if settings["spell_check"]:
-                        ai_sts = await message.reply_sticker(sticker=f"CAACAgQAAxkBAAEq2R9mipkiW9ACyj7oQXznwKTPHqNCXQACkBUAA3mRUZGx4GwLX9XCHgQ")
+                        ai_sts = await message.reply_sticker(sticker=f"CAACAgQAAxkBAAIH52geXZwKM_EU6DFulu3CClLGrfpPAAJ9CgACv9i5UQP6CfFALqk1HgQ")
                         st=await message.reply('<b>Ai is Cheking For Your Spelling. Please Wait.</b>') 
                         is_misspelled = await ai_spell_check(chat_id = message.chat.id,wrong_name=search)
                         if is_misspelled:
@@ -1820,7 +1820,7 @@ async def auto_filter(client, msg, spoll=False):
         else:
             message = msg.message.reply_to_message  # msg will be callback query
             search, files, offset, total_results = spoll
-            m=await message.reply_sticker(sticker="CAACAgIAAxkBAAEVugJljpdfkszexOUZu8hPjuPKty8ZmAACdxgAAqPjKEmMVSFmXGLogR4E",
+            m=await message.reply_sticker(sticker="CAACAgQAAxkBAAIH52geXZwKM_EU6DFulu3CClLGrfpPAAJ9CgACv9i5UQP6CfFALqk1HgQ",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🅿︎🅻︎🅴︎🅰︎🆂︎🅴︎  🆆︎🅰︎🅸︎🆃︎", url=CHNL_LNK)]]))
             settings = await get_settings(message.chat.id)
         key = f"{message.chat.id}-{message.id}"
