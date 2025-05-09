@@ -413,4 +413,4 @@ Failed: `{}`"""
 <b>Charlie Server Is Connected 🥶</b>"""
 
     LOGO = """Charlie Server is Connected 🥶
-    Speed 755mbps and Upload Speed 1GBps 💀"""                                                                                  
+    Speed 10GBPS and Upload Speed 24GBPS 💀"""                                                                                  
