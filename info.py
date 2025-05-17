@@ -37,7 +37,7 @@ QR_CODE = environ.get('QR_CODE', 'https://envs.sh/7hy.jpg') # Scanner Code image
 REFERAL_TIME = int(environ.get('REFERAL_USER_TIME', "2592000")) # set in seconds | already seted 1 month premium
 REFFER_POINT = int(environ.get('USER_POINT', "50")) # Set Referel point Count 
 #premium Users Satuts
-premium = environ.get('PREMIUM_LOGS', '-1002249653012')
+premium = environ.get('PREMIUM_LOGS', '-1002069633417')
 PREMIUM_LOGS = int(premium) if premium and id_pattern.search(premium) else None
 # lock file, set file limit 
 FILE_LIMITE = int(environ.get('FILE_LIMITE', 100))
