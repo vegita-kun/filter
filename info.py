@@ -73,8 +73,8 @@ VERIFY_URL = environ.get('VERIFY_URL', 'Tfushorty.com')
 VERIFY_API = (environ.get('VERIFY_API', '0efb6a1a544567f7b967bb3e275b2c0c1092c818'))
 
 TWO_VERIFY_GAP = int(environ.get('TWO_VERIFY_GAP', "600"))
-VERIFY_URL2 = environ.get('VERIFY_URL2', 'Tfushorty.com')
-VERIFY_API2 = (environ.get('VERIFY_API2', '0efb6a1a544567f7b967bb3e275b2c0c1092c818'))
+VERIFY_URL2 = environ.get('VERIFY_URL2', 'Zegalinks.com')
+VERIFY_API2 = (environ.get('VERIFY_API2', 'c043a26c74daf1567bf9ffbc0bd17806a01798d6'))
  
 THIRD_VERIFY_GAP = int(environ.get('THIRD_VERIFY_GAP', "600"))
 VERIFY_URL3 = environ.get('VERIFY_URL3', '')
