@@ -73,12 +73,12 @@ VERIFY_URL = environ.get('VERIFY_URL', 'Tfushorty.com')
 VERIFY_API = (environ.get('VERIFY_API', '0efb6a1a544567f7b967bb3e275b2c0c1092c818'))
 
 TWO_VERIFY_GAP = int(environ.get('TWO_VERIFY_GAP', "600"))
-VERIFY_URL2 = environ.get('VERIFY_URL2', 'Zegalinks.com')
-VERIFY_API2 = (environ.get('VERIFY_API2', 'c043a26c74daf1567bf9ffbc0bd17806a01798d6'))
+VERIFY_URL2 = environ.get('VERIFY_URL2', 'Adrinolinks.com')
+VERIFY_API2 = (environ.get('VERIFY_API2', 'adb322ce630e0314dbfe3a1a3e8e95c8f4c47420'))
  
 THIRD_VERIFY_GAP = int(environ.get('THIRD_VERIFY_GAP', "600"))
-VERIFY_URL3 = environ.get('VERIFY_URL3', '')
-VERIFY_API3 = (environ.get('VERIFY_API3', ''))
+VERIFY_URL3 = environ.get('VERIFY_URL3', 'Pocolinks.com')
+VERIFY_API3 = (environ.get('VERIFY_API3', '5c76dba32cf8cdae94df94fd862e71cda26e52dc'))
  
 TUTORIAL = environ.get('TUTORIAL', 'https://t.me/moviee_group_0/3500316')
 TUTORIAL2 = environ.get('TUTORIAL2', 'https://t.me/moviee_group_0/3500316')
