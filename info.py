@@ -20,7 +20,7 @@ def is_enabled(value, default):
 SESSION = environ.get('SESSION', 'Media_search')
 API_ID = int(environ.get('API_ID', "20420522"))
 API_HASH = environ.get('API_HASH', "6a5f8ab9c9e6b139b4e87a83864e5f8c")
-BOT_TOKEN = environ.get('BOT_TOKEN', "")
+BOT_TOKEN = environ.get('BOT_TOKEN', "6838468179:AAHsJOcXSAPcfJDvozeoTHloZTCLz60-X0A")
 TIMEZONE = environ.get("TIMEZONE", "Asia/Kolkata")
 
 # Bot settings
@@ -37,7 +37,7 @@ QR_CODE = environ.get('QR_CODE', 'https://envs.sh/7hy.jpg') # Scanner Code image
 REFERAL_TIME = int(environ.get('REFERAL_USER_TIME', "2592000")) # set in seconds | already seted 1 month premium
 REFFER_POINT = int(environ.get('USER_POINT', "50")) # Set Referel point Count 
 #premium Users Satuts
-premium = environ.get('PREMIUM_LOGS', '-1002069633417')
+premium = environ.get('PREMIUM_LOGS', '-1001719724807')
 PREMIUM_LOGS = int(premium) if premium and id_pattern.search(premium) else None
 # lock file, set file limit 
 FILE_LIMITE = int(environ.get('FILE_LIMITE', 100))
@@ -45,29 +45,29 @@ SEND_ALL_LIMITE = int(environ.get('SEND_ALL_LIMITE', 10))
 LIMIT_MODE = is_enabled((environ.get('LIMIT_MODE', 'True')), False)
 
 # Admins, Channels & Users
-ADMINS = [int(admin) if id_pattern.search(admin) else admin for admin in environ.get('ADMINS', '5369057382').split()]
-OWNER_USER_NAME = environ.get("OWNER_USER_NAME", "PrinceNy4") # widout 👉 @
-CHANNELS = [int(ch) if id_pattern.search(ch) else ch for ch in environ.get('CHANNELS', '-1002249653012').split()]
+ADMINS = [int(admin) if id_pattern.search(admin) else admin for admin in environ.get('ADMINS', '5957500906').split()]
+OWNER_USER_NAME = environ.get("OWNER_USER_NAME", "its_zeno") # widout 👉 @
+CHANNELS = [int(ch) if id_pattern.search(ch) else ch for ch in environ.get('CHANNELS', '').split()]
 # post channel auto post new movie
 POST_CHANNELS = list(map(int, (channel.strip() for channel in environ.get('POST_CHANNELS', '-1002307667584').split(','))))
-AUTH_CHANNEL = int(environ.get('AUTH_CHANNEL', '-1001728907275'))
-AUTH_REQ_CHANNEL = int(environ.get('AUTH_REQ_CHANNEL', '-1002199295496'))
+AUTH_CHANNEL = int(environ.get('AUTH_CHANNEL', ''))
+AUTH_REQ_CHANNEL = int(environ.get('AUTH_REQ_CHANNEL', '-1002796034488'))
 NO_RESULTS_MSG = is_enabled((environ.get("NO_RESULTS_MSG", 'True')), False)
 
 # MongoDB information
-DATABASE_URI = environ.get('DATABASE_URI', "")
+DATABASE_URI = environ.get('DATABASE_URI', "mongodb+srv://Ujwal:JZCVCfWTThhegRxt@ujwal.82hvrit.mongodb.net/?retryWrites=true&w=majority&appName=Ujwal")
 DATABASE_NAME = environ.get('DATABASE_NAME', "Cluster0")
 COLLECTION_NAME = environ.get('COLLECTION_NAME', 'Wefo_Files')
 
 #stream link shortner
-STREAM_SITE = (environ.get('STREAM_SITE', 'sharedisklinks.com'))
-STREAM_API = (environ.get('STREAM_API', '587f94f0e0b1813a52aed61290af6ea79d6ee464'))
-STREAM_HTO = (environ.get('STREAMHTO', 'https://t.me/Hoe/69'))
+STREAM_SITE = (environ.get('STREAM_SITE', ''))
+STREAM_API = (environ.get('STREAM_API', ''))
+STREAM_HTO = (environ.get('STREAMHTO', ''))
 STREAM_MODE = is_enabled((environ.get('STREAM_MODE', "False")), False)
 
 
 #verify site api and url
-IS_VERIFY = is_enabled((environ.get('IS_VERIFY', 'True')), False)
+IS_VERIFY = is_enabled((environ.get('IS_VERIFY', 'False')), False)
 VERIFY_IMG = environ.get("VERIFY_IMG", "https://graph.org/file/1669ab9af68eaa62c3ca4.jpg")
 VERIFY_URL = environ.get('VERIFY_URL', 'Tfushorty.com')
 VERIFY_API = (environ.get('VERIFY_API', '0efb6a1a544567f7b967bb3e275b2c0c1092c818'))
@@ -115,7 +115,7 @@ MELCOW_NEW_USERS = is_enabled((environ.get('MELCOW_NEW_USERS', "True")), True)
 REACTION = ["🔥", "❤️", "😍", "⚡", "👍", "❤", "🔥", "🥰", "👏", "😁", "🎉", "🤩", "🙏", "👌", "🕊", "❤‍🔥", "⚡", "😇", "🤗", "😘", "🙊", "😎"]
 
 # Streaming
-BIN_CHANNEL = int(environ.get("BIN_CHANNEL", "-1002069633417")) 
+BIN_CHANNEL = int(environ.get("BIN_CHANNEL", "-1001719724807")) 
 PORT = int(environ.get('PORT', 8080))
 NO_PORT = bool(environ.get('NO_PORT', False))
 APP_NAME = None
