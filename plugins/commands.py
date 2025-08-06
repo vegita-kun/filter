@@ -312,16 +312,16 @@ async def start(client, message):
                 clean_caption = re.sub(r'\s+', ' ', clean_caption).strip()
 
                 # 🧹 Clean filename
-               raw_file_name = files1.file_name or ''
-               clean_file_name = re.sub(r'@\w+', '', raw_file_name)
-               clean_file_name = re.sub(r'\s+', ' ', clean_file_name).strip()
+                raw_file_name = files1.file_name or ''
+                clean_file_name = re.sub(r'@\w+', '', raw_file_name)
+                clean_file_name = re.sub(r'\s+', ' ', clean_file_name).strip()
 
                # ✅ Use cleaned values
-               f_caption = CAPTION.format(
-                   file_name = clean_file_name,
-                   file_size = get_size(files1.file_size),
-                   file_caption = clean_caption
-               )
+                f_caption = CAPTION.format(
+                    file_name = clean_file_name,
+                    file_size = get_size(files1.file_size),
+                    file_caption = clean_caption
+                )
                 if not await db.has_premium_access(message.from_user.id):
                     limit = settings.get("all_limit", SEND_ALL_LIMITE)
                     if settings.get("filelock", LIMIT_MODE):
