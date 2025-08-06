@@ -305,16 +305,10 @@ async def start(client, message):
                 files1 = files_[0]
                 settings = await get_settings(int(grp_id))
                 CAPTION = settings.get('caption', CUSTOM_FILE_CAPTION)
-               
-                # 🧹 Clean caption
-                raw_caption = files1.caption or ''
-                clean_caption = re.sub(r'@\w+', '', raw_caption)
-                clean_caption = re.sub(r'\s+', ' ', clean_caption).strip()
 
-                # 🧹 Clean filename
-                raw_file_name = files1.file_name or ''
-                clean_file_name = re.sub(r'@\w+', '', raw_file_name)
-                clean_file_name = re.sub(r'\s+', ' ', clean_file_name).strip()
+                clean_caption = re.sub(r'@\w+', '', files.caption or '')
+                clean_caption = (files.caption or '').replace('@Ongoing_Paradox', '')
+        
 
                # ✅ Use cleaned values
                 f_caption = CAPTION.format(
