@@ -210,49 +210,41 @@ async def start(client, message):
             pre, grp_id, file_id = data.split('_', 2)
         except:
             pre, grp_id, file_id = "", 0, data
-        settings = await get_settings(int(data.split("_", 2)[1]))
-        if settings.get('fsub_id', AUTH_CHANNEL) == AUTH_REQ_CHANNEL:
-            if AUTH_REQ_CHANNEL and not await is_req_subscribed(client, message):
+
+        settings = await get_settings(int(grp_id))
+        fsub_channels = settings.get('fsub_ids', [])
+
+        # 🔁 Multi-channel loop for checking and inviting
+        not_joined_links = []
+        for channel in fsub_channels:
+            if not await is_subscribed(client, message.from_user.id, int(channel)):
                 try:
-                    invite_link = await client.create_chat_invite_link(int(AUTH_REQ_CHANNEL), creates_join_request=True)
+                    invite = await client.create_chat_invite_link(int(channel), creates_join_request=True)
+                    not_joined_links.append(invite.invite_link)
                 except ChatAdminRequired:
-                    logger.error("Make sure Bot is admin in Forcesub channel")
-                    return
-                btn = [[
-                    InlineKeyboardButton("⛔️ ᴊᴏɪɴ ɴᴏᴡ ⛔️", url=invite_link.invite_link)
-                ]]
-                if message.command[1] != "subscribe":
-                    if data.startswith("allfiles"):
-                        btn.append([InlineKeyboardButton("♻️ ᴛʀʏ ᴀɢᴀɪɴ ♻️", url=f"https://t.me/{temp.U_NAME}?start=allfiles_{grp_id}_{file_id}")])
-                    else:
-                        btn.append([InlineKeyboardButton("♻️ ᴛʀʏ ᴀɢᴀɪɴ ♻️", url=f"https://t.me/{temp.U_NAME}?start=files_{grp_id}_{file_id}")])
-                await client.send_message(
-                    chat_id=message.from_user.id,
-                    text=script.FSUB_TXT.format(message.from_user.mention),
-                    reply_markup=InlineKeyboardMarkup(btn),
-                    parse_mode=enums.ParseMode.HTML
-                )
-                return
-        else:
-            id = settings.get('fsub_id', AUTH_CHANNEL)
-            channel = int(id)
-            if settings.get('fsub_id', AUTH_CHANNEL) and not await is_subscribed(client, message.from_user.id, channel):
-                invite_link = await client.create_chat_invite_link((channel), creates_join_request=True)
-                btn = [[
-                        InlineKeyboardButton("⛔️ ᴊᴏɪɴ ɴᴏᴡ ⛔️", url=invite_link.invite_link)
-                      ]]
-                if message.command[1] != "subscribe":
-                    if data.startswith("allfiles"):
-                        btn.append([InlineKeyboardButton("♻️ ᴛʀʏ ᴀɢᴀɪɴ ♻️", url=f"https://t.me/{temp.U_NAME}?start=allfiles_{grp_id}_{file_id}")])
-                    else:
-                        btn.append([InlineKeyboardButton("♻️ ᴛʀʏ ᴀɢᴀɪɴ ♻️", url=f"https://t.me/{temp.U_NAME}?start=files_{grp_id}_{file_id}")])
-                await client.send_message(
-                    chat_id=message.from_user.id,
-                    text=script.FSUB_TXT.format(message.from_user.mention),
-                    reply_markup=InlineKeyboardMarkup(btn),
-                    parse_mode=enums.ParseMode.HTML
-                )
-                return
+                    logger.error(f"Bot must be admin in ForceSub channel {channel}")
+                    continue
+
+        if not_joined_links:
+            btn = []
+            for i, link in enumerate(not_joined_links, start=1):
+                suffix = {1: "1sᴛ", 2: "2ɴᴅ", 3: "3ʀᴅ"}.get(i, f"{i}ᴛʜ")
+                btn.append([InlineKeyboardButton(f"⛔️ ᴊᴏɪɴ {suffix} ⛔️", url=link)])
+
+            if message.command[1] != "subscribe":
+                if data.startswith("allfiles"):
+                    btn.append([InlineKeyboardButton("♻️ ᴛʀʏ ᴀɢᴀɪɴ ♻️", url=f"https://t.me/{temp.U_NAME}?start=allfiles_{grp_id}_{file_id}")])
+                else:
+                    btn.append([InlineKeyboardButton("♻️ ᴛʀʏ ᴀɢᴀɪɴ ♻️", url=f"https://t.me/{temp.U_NAME}?start=files_{grp_id}_{file_id}")])
+
+            await client.send_message(
+                chat_id=message.from_user.id,
+                text=script.FSUB_TXT.format(message.from_user.mention),
+                reply_markup=InlineKeyboardMarkup(btn),
+                parse_mode=enums.ParseMode.HTML
+            )
+            return
+
         if not await db.has_premium_access(user_id):
             settings = await get_settings(int(grp_id))
             is_verify = settings["is_verify"]
