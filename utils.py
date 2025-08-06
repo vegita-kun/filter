@@ -107,19 +107,17 @@ async def get_seconds(time_string):
     else:
         return 0
         
-async def is_req_subscribed(bot, query):
-    if await db.find_join_req(query.from_user.id):
+async def is_req_subscribed(bot, user_id: int) -> bool:
+    if await db.find_join_req(user_id):
         return True
     try:
-        user = await bot.get_chat_member(AUTH_CHANNELS, query.from_user.id)
+        user = await bot.get_chat_member(AUTH_REQ_CHANNEL, user_id)
+        return user.status != enums.ChatMemberStatus.BANNED
     except UserNotParticipant:
-        pass
+        return False
     except Exception as e:
-        print(e)
-    else:
-        if user.status != enums.ChatMemberStatus.BANNED:
-            return True
-    return False
+        print(f"[Request FSub Error]: {e}")
+        return False
 
 async def is_subscribed(bot, user_id: int, channel_id: int) -> bool:
     try:
