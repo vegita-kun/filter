@@ -215,7 +215,7 @@ Money heist S0E01
 ★ Mᴇssᴀɢᴇ <code>{}</code>"""
 
     CAPTION = """
-<blockquote>⍟ ғɪʟᴇ ɴᴀᴍᴇ : @Netflix_Dual - {file_name}</blockquote><b>
+<blockquote>⍟ ғɪʟᴇ ɴᴀᴍᴇ : @Netflix_Dual - {file_caption}</blockquote><b>
 
 <a href= https://t.me/Netflix_Dual>❒ ᴄʜᴀɴɴᴇʟ​</a>
 <a href= https://t.me/+ir9yAZBx0lZiMzJl>❒ ɢʀᴏᴜᴘ​</a></b>"""
