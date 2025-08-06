@@ -305,6 +305,10 @@ async def start(client, message):
                 files1 = files_[0]
                 settings = await get_settings(int(grp_id))
                 CAPTION = settings.get('caption', CUSTOM_FILE_CAPTION)
+                # 🧹 Remove @channel tags from caption
+                raw_caption = files1.caption or ''
+                clean_caption = re.sub(r'@\w+', '', raw_caption)  # removes @anything
+                clean_caption = re.sub(r'\s+', ' ', clean_caption).strip()  # clean extra spaces
                 f_caption = CAPTION.format(
                     file_name = files1.file_name,
                     file_size = get_size(files1.file_size),
