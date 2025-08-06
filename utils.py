@@ -121,17 +121,15 @@ async def is_req_subscribed(bot, query):
             return True
     return False
 
-async def is_subscribed(bot, user_id, channel_id):
+async def is_subscribed(bot, user_id: int, channel_id: int) -> bool:
     try:
         user = await bot.get_chat_member(channel_id, user_id)
+        return user.status != enums.ChatMemberStatus.BANNED
     except UserNotParticipant:
-        pass
+        return False
     except Exception as e:
-        pass
-    else:
-        if user.status != enums.ChatMemberStatus.BANNED:
-            return True
-    return False
+        print(f"[FSub] Error checking channel {channel_id} for user {user_id}: {e}")
+        return False
 
 async def get_poster(query, bulk=False, id=False, file=None):
     if not id:
