@@ -292,7 +292,7 @@ class Database:
             'filelock': LIMIT_MODE, 
             'log': LOG_CHANNEL,
             'is_verify': IS_VERIFY,
-            'fsub_id': AUTH_CHANNEL, 
+            'fsub_ids': [AUTH_CHANNEL],
             'file_limit': FILE_LIMITE, 
             'all_limit': SEND_ALL_LIMITE, 
             'stream_mode': STREAM_MODE,
