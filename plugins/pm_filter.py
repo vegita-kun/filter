@@ -36,8 +36,34 @@ logger.setLevel(logging.ERROR)
 
 BUTTONS = {}
 
+@Client.on_inline_query()
+async def inline_query_handler(client, inline_query):
+    query = inline_query.query.strip()
 
+    if not query.startswith("sbatch_"):
+        return
 
+    files = temp.GETALL.get(query)
+    if not files:
+        return await inline_query.answer([], switch_pm_text="No files found", cache_time=1)
+
+    results = []
+    for file in files[:50]:  # Max 50 for Telegram
+        results.append(
+            pyrogram.types.InlineQueryResultArticle(
+                title=file['file_name'],
+                description=f"Size: {get_size(file['file_size'])}",
+                input_message_content=pyrogram.types.InputTextMessageContent(
+                    f"https://t.me/{temp.U_NAME}?start=files_{file['file_id']}"
+                ),
+                reply_markup=InlineKeyboardMarkup([[
+                    InlineKeyboardButton("📥 Get File", url=f"https://t.me/{temp.U_NAME}?start=files_{file['file_id']}")
+                ]]),
+            )
+        )
+
+    await inline_query.answer(results=results, cache_time=0)
+    
 @Client.on_callback_query(filters.regex(r"^streaming"))
 async def stream_download(bot, query):
     try:
