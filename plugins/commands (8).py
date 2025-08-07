@@ -28,6 +28,7 @@ import base64
 logger = logging.getLogger(__name__)
 
 TIMEZONE = "Asia/KKolkata"
+BATCH_FILES = {}
 
 @Client.on_message(filters.command("start") & filters.incoming)
 async def start(client, message):
