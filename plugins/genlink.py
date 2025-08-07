@@ -4,11 +4,14 @@ from pyrogram.errors.exceptions.bad_request_400 import ChannelInvalid, UsernameI
 from info import ADMINS, LOG_CHANNEL
 from database.ia_filterdb import unpack_new_file_id
 from utils import temp
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import re
 import os
 import json
 import base64
 import logging
+import random
+import string
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -20,6 +23,70 @@ async def allowed(_, __, message):
         return True
     return False
 
+
+@Client.on_message(filters.command(['sbatch']) & filters.create(allowed))
+async def gen_search_style_batch(bot, message):
+    if " " not in message.text:
+        return await message.reply("Example:\n<code>/sbatch https://t.me/channel/10 https://t.me/channel/20</code>.")
+
+    parts = message.text.strip().split(" ")
+    if len(parts) != 3:
+        return await message.reply("Use correct format:\n<code>/sbatch https://t.me/channel/10 https://t.me/channel/20</code>.")
+
+    _, first, last = parts
+    regex = re.compile(r"(https://)?(t\.me|telegram\.me|telegram\.dog)/(c/)?(\d+|[a-zA-Z_0-9]+)/(\d+)$")
+
+    match = regex.match(first)
+    if not match:
+        return await message.reply("❌ Invalid first message link.")
+    f_chat = match.group(4)
+    f_msg_id = int(match.group(5))
+    if f_chat.isnumeric():
+        f_chat = int("-100" + f_chat)
+
+    match = regex.match(last)
+    if not match:
+        return await message.reply("❌ Invalid second message link.")
+    l_chat = match.group(4)
+    l_msg_id = int(match.group(5))
+    if l_chat.isnumeric():
+        l_chat = int("-100" + l_chat)
+
+    if f_chat != l_chat:
+        return await message.reply("❌ Both links must be from the same chat.")
+
+    try:
+        await bot.get_chat(f_chat)
+    except Exception as e:
+        return await message.reply(f"❌ Failed to access chat: {e}")
+
+    files = []
+    async for msg in bot.iter_messages(f_chat, min_id=min(f_msg_id, l_msg_id)-1, max_id=max(f_msg_id, l_msg_id)+1):
+        if not msg.media or msg.empty or msg.service:
+            continue
+        file_type = msg.media
+        file = getattr(msg, file_type.value)
+        if file:
+            files.append({
+                "file_id": file.file_id,
+                "file_name": getattr(file, "file_name", "Unknown"),
+                "file_size": file.file_size
+            })
+
+    if not files:
+        return await message.reply("⚠️ No media found between the given messages.")
+
+    # Store in temp for inline results
+    keyword = f"sbatch_{message.from_user.id}_{''.join(random.choices(string.ascii_lowercase, k=4))}"
+    temp.GETALL[keyword] = files
+
+    await message.reply(
+        f"✅ Search-style batch ready with `{len(files)}` files.\nClick below to browse:",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("📂 View Files", switch_inline_query_current_chat=keyword)
+        ]])
+    )
+    
 @Client.on_message(filters.command(['link', 'plink']) & filters.create(allowed))
 async def gen_link_s(bot, message):
     replied = message.reply_to_message
