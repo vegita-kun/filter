@@ -313,10 +313,19 @@ async def start(client, message):
                 files1 = files_[0]
                 settings = await get_settings(int(grp_id))
                 CAPTION = settings.get('caption', CUSTOM_FILE_CAPTION)
+                # Clean the caption
+                original_caption = files1.caption or ""
+                # Remove all @channel_tags and clean them (e.g., @Ongoing_Paradox → Ongoing paradox)
+                def clean_channel_tags(text):
+                    return re.sub(r'@(\w+)', lambda m: m.group(1).replace('_', ' ').title(), text)
+
+                clean_caption = clean_channel_tags(original_caption)
+                clean_file_name = files1.file_name
+
                 f_caption = CAPTION.format(
-                    file_name = files1.file_name,
+                    file_name = clean_file_name,
                     file_size = get_size(files1.file_size),
-                    file_caption=files1.caption
+                    file_caption=clean_caption
                 )
                 if not await db.has_premium_access(message.from_user.id):
                     limit = settings.get("all_limit", SEND_ALL_LIMITE)
