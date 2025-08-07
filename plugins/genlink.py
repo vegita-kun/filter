@@ -3,7 +3,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import random
 import string
 import re
-from info import ADMINS, PUBLIC_FILE_STORE
+from info import ADMINS, LOG_CHANNEL
 from utils import temp
 
 async def allowed(_, __, message):
