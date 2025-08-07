@@ -17,7 +17,7 @@ from database.connections_mdb import active_connection, all_connections, delete_
     make_inactive
 from info import *
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto, InputMediaVideo
-from pyrogram import Client, filters, enums
+from pyrogram import Client, filters, enums, types 
 from pyrogram.errors import FloodWait, UserIsBlocked, MessageNotModified, PeerIdInvalid
 from utils import get_size, is_subscribed, get_poster, temp, get_settings, save_group_settings, get_shortlink, stream_site, get_text, imdb
 from database.users_chats_db import db
