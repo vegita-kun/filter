@@ -211,7 +211,7 @@ async def start(client, message):
         except:
             pre, grp_id, file_id = "", 0, data
         settings = await get_settings(int(data.split("_", 2)[1]))
-        if settings.get('fsub_id', AUTH_CHANNEL) == AUTH_REQ_CHANNEL:
+        if settings.get('fsub_id', AUTH_CHANNELS) == AUTH_REQ_CHANNEL:
             if AUTH_REQ_CHANNEL and not await is_req_subscribed(client, message):
                 try:
                     invite_link = await client.create_chat_invite_link(int(AUTH_REQ_CHANNEL), creates_join_request=True)
@@ -234,9 +234,9 @@ async def start(client, message):
                 )
                 return
         else:
-            id = settings.get('fsub_id', AUTH_CHANNEL)
+            id = settings.get('fsub_id', AUTH_CHANNELS)
             channel = int(id)
-            if settings.get('fsub_id', AUTH_CHANNEL) and not await is_subscribed(client, message.from_user.id, channel):
+            if settings.get('fsub_id', AUTH_CHANNELS) and not await is_subscribed(client, message.from_user.id, channel):
                 invite_link = await client.create_chat_invite_link((channel), creates_join_request=True)
                 btn = [[
                         InlineKeyboardButton("⛔️ ᴊᴏɪɴ ɴᴏᴡ ⛔️", url=invite_link.invite_link)
