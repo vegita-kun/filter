@@ -1241,74 +1241,51 @@ async def set_mode(client, message):
         await message.reply(f"An error occurred: {e}")
 
 
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from utils import get_size, temp
-import re
-
 @Client.on_message(filters.command("pbatch") & filters.private)
 async def pbatch_handler(client, message):
-    if len(message.command) < 2:
-        return await message.reply("Usage:\n`/pbatch <link1> <link2> ...`")
+    if not message.reply_to_message:
+        return await message.reply("Please reply to the first file message and give count.\nExample: `/pbatch 5`")
 
-    links = message.text.split()[1:]
+    try:
+        count = int(message.command[1]) if len(message.command) > 1 else 1
+    except ValueError:
+        return await message.reply("Invalid count. Example: `/pbatch 5`")
+
+    start_msg = message.reply_to_message
+    chat_id = start_msg.chat.id
+    start_id = start_msg.id
+
     files_data = []
+    temp.PBATCH_RESULTS = getattr(temp, "PBATCH_RESULTS", {})
 
-    for link in links:
-        chat_id = None
-        msg_id = None
-
-        # Private channel format
-        if "/c/" in link:
-            match = re.search(r"/c/(\d+)/(\d+)", link)
-            if match:
-                chat_id = int(f"-100{match.group(1)}")  # Add -100 prefix
-                msg_id = int(match.group(2))
-        else:
-            # Public channel format
-            match = re.search(r"t\.me/([^/]+)/(\d+)", link)
-            if match:
-                chat_id = match.group(1)  # username as string
-                msg_id = int(match.group(2))
-
-        if not chat_id or not msg_id:
-            await message.reply(f"Invalid link format: {link}")
-            continue
-
+    for i in range(count):
+        msg_id = start_id + i
         try:
             msg = await client.get_messages(chat_id, msg_id)
-            file_obj = None
-            for media_type in ["document", "video", "audio"]:
-                file_obj = getattr(msg, media_type, None)
-                if file_obj:
-                    break
-
-            if not file_obj:
-                await message.reply(f"No file found in: {link}")
-                continue
-
-            files_data.append({
-                "file_id": file_obj.file_id,
-                "file_name": file_obj.file_name or "Unnamed File",
-                "file_size": get_size(file_obj.file_size)
-            })
-
-        except Exception as e:
-            await message.reply(f"Error fetching {link}: {e}")
+        except Exception:
             continue
 
-    if not files_data:
-        return await message.reply("No valid files found.")
+        media = msg.document or msg.video or msg.audio or msg.photo
+        if not media:
+            continue
 
-    # Store in temp for send-all usage
-    temp.PBATCH_RESULTS = getattr(temp, "PBATCH_RESULTS", {})
+        files_data.append({
+            "file_id": media.file_id,
+            "file_name": getattr(media, "file_name", "Untitled"),
+            "file_size": get_size(getattr(media, "file_size", 0))
+        })
+
+    if not files_data:
+        return await message.reply("No valid files found in the given range.")
+
     temp.PBATCH_RESULTS[message.from_user.id] = files_data
 
-    # Create file list text
-    file_list_text = ""
-    for f in files_data:
-        file_list_text += f"📁 {f['file_size']} ▶ {f['file_name']}\n\n"
+    # File list format
+    file_list_text = "\n\n".join(
+        [f"📁 {f['file_size']} ▶ {f['file_name']}" for f in files_data]
+    )
 
-    # Create buttons
+    # Buttons
     buttons = [
         [InlineKeyboardButton("!SEND ALL!", callback_data=f"pbatch_sendall#{message.from_user.id}")],
         [
@@ -1318,19 +1295,17 @@ async def pbatch_handler(client, message):
     ]
 
     await message.reply(
-        file_list_text.strip(),
+        file_list_text,
         reply_markup=InlineKeyboardMarkup(buttons),
         disable_web_page_preview=True
     )
 
-# Callback handler for send-all
 @Client.on_callback_query(filters.regex(r"^pbatch_sendall"))
 async def pbatch_send_all(client, query):
     uid = int(query.data.split("#")[1])
     files = temp.PBATCH_RESULTS.get(uid)
-
     if not files:
-        return await query.answer("Batch expired, please run /pbatch again.", show_alert=True)
+        return await query.answer("Batch expired. Please run /pbatch again.", show_alert=True)
 
     for f in files:
         await client.send_cached_media(
