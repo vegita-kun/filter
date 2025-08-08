@@ -1,5 +1,6 @@
 # This code has been modified by @Safaridev
 # Please do not remove this credit
+import uuid
 import os
 import sys
 import logging
@@ -29,6 +30,19 @@ logger = logging.getLogger(__name__)
 
 TIMEZONE = "Asia/KKolkata"
 
+BATCH_FILE = "batches.json"
+
+# Load from file
+if os.path.exists(BATCH_FILE):
+    with open(BATCH_FILE, "r") as f:
+        BATCH_STORE = json.load(f)
+else:
+    BATCH_STORE = {}
+
+def save_batches():
+    with open(BATCH_FILE, "w") as f:
+        json.dump(BATCH_STORE, f)
+        
 @Client.on_message(filters.command("start") & filters.incoming)
 async def start(client, message):
     try: 
@@ -1241,84 +1255,144 @@ async def set_mode(client, message):
         await message.reply(f"An error occurred: {e}")
 
 
+
+# Store states
+USER_STATE = {}
+BATCH_STORE = {}
+
+# Step 1: Start batch creation
 @Client.on_message(filters.command("pbatch") & filters.private)
-async def pbatch_handler(client, message):
-    if not message.reply_to_message:
-        return await message.reply("Reply to the first file and give count.\nExample: `/pbatch 5`")
+async def start_pbatch(client, message):
+    USER_STATE[message.from_user.id] = {"step": "awaiting_first"}
+    await message.reply("📌 Please reply to the **first file** of the batch.")
 
-    try:
-        count = int(message.command[1]) if len(message.command) > 1 else 1
-    except ValueError:
-        return await message.reply("Invalid count. Example: `/pbatch 5`")
+# Step 2: First file received
+@Client.on_message(filters.private)
+async def pbatch_first_last(client, message):
+    uid = message.from_user.id
+    if uid not in USER_STATE:
+        return  # No active batch creation
 
-    start_msg = message.reply_to_message
-    chat_id = start_msg.chat.id
-    start_id = start_msg.id
+    state = USER_STATE[uid]
 
-    files_data = []
-    temp.PBATCH_RESULTS = getattr(temp, "PBATCH_RESULTS", {})
+    # Awaiting first file
+    if state["step"] == "awaiting_first" and message.reply_to_message:
+        state["first_id"] = message.reply_to_message.id
+        state["chat_id"] = message.reply_to_message.chat.id
+        state["step"] = "awaiting_last"
+        await message.reply("📌 Now reply to the **last file** of the batch.")
+        return
 
-    for i in range(count):
-        msg_id = start_id + i
-        try:
-            msg = await client.get_messages(chat_id, msg_id)
-        except Exception:
-            continue
+    # Awaiting last file
+    if state["step"] == "awaiting_last" and message.reply_to_message:
+        state["last_id"] = message.reply_to_message.id
+        chat_id = state["chat_id"]
+        first_id = state["first_id"]
+        last_id = state["last_id"]
 
-        media = msg.document or msg.video or msg.audio or msg.photo
-        if not media:
-            continue
+        # Ensure correct order
+        if last_id < first_id:
+            first_id, last_id = last_id, first_id
 
-        files_data.append({
-            "file_id": media.file_id,
-            "file_name": getattr(media, "file_name", "Untitled"),
-            "file_size": get_size(getattr(media, "file_size", 0))
-        })
+        # Fetch files in range
+        files_data = []
+        for msg_id in range(first_id, last_id + 1):
+            try:
+                msg = await client.get_messages(chat_id, msg_id)
+            except:
+                continue
 
-    if not files_data:
-        return await message.reply("No valid files found in the given range.")
+            media = msg.document or msg.video or msg.audio or msg.photo
+            if not media:
+                continue
 
-    temp.PBATCH_RESULTS[message.from_user.id] = files_data
+            files_data.append({
+                "file_id": media.file_id,
+                "file_name": getattr(media, "file_name", "Untitled"),
+                "file_size": get_size(getattr(media, "file_size", 0))
+            })
 
-    # Header text
-    header_text = f"Found {len(files_data)} files in batch:\nSelect below to download ⬇️"
+        if not files_data:
+            await message.reply("No valid files found in the selected range.")
+            USER_STATE.pop(uid, None)
+            return
 
-    # File buttons
-    file_buttons = []
-    for idx, f in enumerate(files_data):
-        btn_text = f"{f['file_name'][:40]} [{f['file_size']}]"
-        file_buttons.append([InlineKeyboardButton(btn_text, callback_data=f"pbatch_single#{message.from_user.id}#{idx}")])
+        # Store batch with unique ID
+        batch_id = str(uuid.uuid4())[:8]
+        BATCH_STORE[batch_id] = files_data
 
-    # Extra buttons row
+        # Clear state
+        USER_STATE.pop(uid, None)
+
+        # Send batch link
+        bot_info = await client.get_me()
+        link = f"https://t.me/{bot_info.username}?start=batch_{batch_id}"
+        await message.reply(f"✅ Batch created!\nClick the link to view:\n{link}")
+        return
+
+# Handle /start with batch link
+@Client.on_message(filters.private & filters.regex(r"^/start batch_"))
+async def open_batch(client, message):
+    batch_id = message.text.split("batch_")[1]
+    if batch_id not in BATCH_STORE:
+        return await message.reply("❌ This batch link has expired.")
+
+    files_data = BATCH_STORE[batch_id]
+    await send_batch_page(client, message.chat.id, batch_id, page=1)
+
+# Pagination sender
+async def send_batch_page(client, chat_id, batch_id, page):
+    files_data = BATCH_STORE[batch_id]
+    per_page = 10
+    total_pages = (len(files_data) + per_page - 1) // per_page
+
+    start = (page - 1) * per_page
+    end = start + per_page
+    page_files = files_data[start:end]
+
+    # Buttons for each file
+    file_buttons = [
+        [InlineKeyboardButton(f"{f['file_name'][:40]} [{f['file_size']}]", callback_data=f"batchfile#{batch_id}#{i}")]
+        for i, f in enumerate(page_files, start=start)
+    ]
+
+    # Pagination buttons
+    nav_buttons = []
+    if page > 1:
+        nav_buttons.append(InlineKeyboardButton("⬅️ Prev", callback_data=f"batchpage#{batch_id}#{page-1}"))
+    if page < total_pages:
+        nav_buttons.append(InlineKeyboardButton("Next ➡️", callback_data=f"batchpage#{batch_id}#{page+1}"))
+
+    # Extra controls
     extra_buttons = [
-        [InlineKeyboardButton("!SEND ALL!", callback_data=f"pbatch_sendall#{message.from_user.id}")],
+        [InlineKeyboardButton("!SEND ALL!", callback_data=f"batchsendall#{batch_id}")],
         [
-            InlineKeyboardButton("Languages", callback_data="pbatch_lang"),
-            InlineKeyboardButton("Qualitys", callback_data="pbatch_quality")
+            InlineKeyboardButton("Languages", callback_data="batch_lang"),
+            InlineKeyboardButton("Qualitys", callback_data="batch_quality")
         ]
     ]
 
-    # Merge all buttons
-    all_buttons = file_buttons + extra_buttons
+    buttons = file_buttons
+    if nav_buttons:
+        buttons.append(nav_buttons)
+    buttons += extra_buttons
 
-    await message.reply(
-        header_text,
-        reply_markup=InlineKeyboardMarkup(all_buttons),
-        disable_web_page_preview=True
+    await client.send_message(
+        chat_id=chat_id,
+        text=f"📂 **Batch Files** (Page {page}/{total_pages})",
+        reply_markup=InlineKeyboardMarkup(buttons)
     )
 
-# Single file send
-@Client.on_callback_query(filters.regex(r"^pbatch_single"))
-async def pbatch_single_file(client, query):
-    _, uid, index = query.data.split("#")
-    uid = int(uid)
+# Handle single file click
+@Client.on_callback_query(filters.regex(r"^batchfile#"))
+async def send_single_file(client, query):
+    _, batch_id, index = query.data.split("#")
     index = int(index)
+    files_data = BATCH_STORE.get(batch_id, [])
+    if index >= len(files_data):
+        return await query.answer("File not found.", show_alert=True)
 
-    files = temp.PBATCH_RESULTS.get(uid)
-    if not files or index >= len(files):
-        return await query.answer("Batch expired. Please run /pbatch again.", show_alert=True)
-
-    f = files[index]
+    f = files_data[index]
     await client.send_cached_media(
         chat_id=query.from_user.id,
         file_id=f['file_id'],
@@ -1326,15 +1400,19 @@ async def pbatch_single_file(client, query):
     )
     await query.answer("File sent!")
 
-# Send all files
-@Client.on_callback_query(filters.regex(r"^pbatch_sendall"))
-async def pbatch_send_all(client, query):
-    uid = int(query.data.split("#")[1])
-    files = temp.PBATCH_RESULTS.get(uid)
-    if not files:
-        return await query.answer("Batch expired. Please run /pbatch again.", show_alert=True)
+# Handle page navigation
+@Client.on_callback_query(filters.regex(r"^batchpage#"))
+async def batch_page_nav(client, query):
+    _, batch_id, page = query.data.split("#")
+    await query.message.delete()
+    await send_batch_page(client, query.from_user.id, batch_id, int(page))
 
-    for f in files:
+# Handle send all
+@Client.on_callback_query(filters.regex(r"^batchsendall#"))
+async def batch_send_all(client, query):
+    batch_id = query.data.split("#")[1]
+    files_data = BATCH_STORE.get(batch_id, [])
+    for f in files_data:
         await client.send_cached_media(
             chat_id=query.from_user.id,
             file_id=f['file_id'],
