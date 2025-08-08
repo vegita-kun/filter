@@ -1241,6 +1241,10 @@ async def set_mode(client, message):
         await message.reply(f"An error occurred: {e}")
 
 
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from utils import get_size, temp
+import re
+
 @Client.on_message(filters.command("pbatch") & filters.private)
 async def pbatch_handler(client, message):
     if len(message.command) < 2:
@@ -1248,16 +1252,27 @@ async def pbatch_handler(client, message):
 
     links = message.text.split()[1:]
     files_data = []
-    chat_id_pattern = re.compile(r"c/(\d+)/(\d+)")
 
     for link in links:
-        match = chat_id_pattern.search(link)
-        if not match:
+        chat_id = None
+        msg_id = None
+
+        # Private channel format
+        if "/c/" in link:
+            match = re.search(r"/c/(\d+)/(\d+)", link)
+            if match:
+                chat_id = int(f"-100{match.group(1)}")  # Add -100 prefix
+                msg_id = int(match.group(2))
+        else:
+            # Public channel format
+            match = re.search(r"t\.me/([^/]+)/(\d+)", link)
+            if match:
+                chat_id = match.group(1)  # username as string
+                msg_id = int(match.group(2))
+
+        if not chat_id or not msg_id:
             await message.reply(f"Invalid link format: {link}")
             continue
-        
-        chat_id = int(f"-100{match.group(1)}")  # convert to full chat_id
-        msg_id = int(match.group(2))
 
         try:
             msg = await client.get_messages(chat_id, msg_id)
@@ -1266,13 +1281,14 @@ async def pbatch_handler(client, message):
                 file_obj = getattr(msg, media_type, None)
                 if file_obj:
                     break
+
             if not file_obj:
                 await message.reply(f"No file found in: {link}")
                 continue
 
             files_data.append({
                 "file_id": file_obj.file_id,
-                "file_name": file_obj.file_name,
+                "file_name": file_obj.file_name or "Unnamed File",
                 "file_size": get_size(file_obj.file_size)
             })
 
@@ -1284,6 +1300,7 @@ async def pbatch_handler(client, message):
         return await message.reply("No valid files found.")
 
     # Store in temp for send-all usage
+    temp.PBATCH_RESULTS = getattr(temp, "PBATCH_RESULTS", {})
     temp.PBATCH_RESULTS[message.from_user.id] = files_data
 
     # Create file list text
