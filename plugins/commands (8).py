@@ -1244,7 +1244,7 @@ async def set_mode(client, message):
 @Client.on_message(filters.command("pbatch") & filters.private)
 async def pbatch_handler(client, message):
     if not message.reply_to_message:
-        return await message.reply("Please reply to the first file message and give count.\nExample: `/pbatch 5`")
+        return await message.reply("Reply to the first file and give count.\nExample: `/pbatch 5`")
 
     try:
         count = int(message.command[1]) if len(message.command) > 1 else 1
@@ -1280,13 +1280,17 @@ async def pbatch_handler(client, message):
 
     temp.PBATCH_RESULTS[message.from_user.id] = files_data
 
-    # File list format
-    file_list_text = "\n\n".join(
-        [f"📁 {f['file_size']} ▶ {f['file_name']}" for f in files_data]
-    )
+    # Header text
+    header_text = f"Found {len(files_data)} files in batch:\nSelect below to download ⬇️"
 
-    # Buttons
-    buttons = [
+    # File buttons
+    file_buttons = []
+    for idx, f in enumerate(files_data):
+        btn_text = f"{f['file_name'][:40]} [{f['file_size']}]"
+        file_buttons.append([InlineKeyboardButton(btn_text, callback_data=f"pbatch_single#{message.from_user.id}#{idx}")])
+
+    # Extra buttons row
+    extra_buttons = [
         [InlineKeyboardButton("!SEND ALL!", callback_data=f"pbatch_sendall#{message.from_user.id}")],
         [
             InlineKeyboardButton("Languages", callback_data="pbatch_lang"),
@@ -1294,12 +1298,35 @@ async def pbatch_handler(client, message):
         ]
     ]
 
+    # Merge all buttons
+    all_buttons = file_buttons + extra_buttons
+
     await message.reply(
-        file_list_text,
-        reply_markup=InlineKeyboardMarkup(buttons),
+        header_text,
+        reply_markup=InlineKeyboardMarkup(all_buttons),
         disable_web_page_preview=True
     )
 
+# Single file send
+@Client.on_callback_query(filters.regex(r"^pbatch_single"))
+async def pbatch_single_file(client, query):
+    _, uid, index = query.data.split("#")
+    uid = int(uid)
+    index = int(index)
+
+    files = temp.PBATCH_RESULTS.get(uid)
+    if not files or index >= len(files):
+        return await query.answer("Batch expired. Please run /pbatch again.", show_alert=True)
+
+    f = files[index]
+    await client.send_cached_media(
+        chat_id=query.from_user.id,
+        file_id=f['file_id'],
+        caption=f['file_name']
+    )
+    await query.answer("File sent!")
+
+# Send all files
 @Client.on_callback_query(filters.regex(r"^pbatch_sendall"))
 async def pbatch_send_all(client, query):
     uid = int(query.data.split("#")[1])
@@ -1313,6 +1340,5 @@ async def pbatch_send_all(client, query):
             file_id=f['file_id'],
             caption=f['file_name']
         )
-
     await query.answer("All files sent!", show_alert=True)
     
