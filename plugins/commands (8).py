@@ -1258,13 +1258,25 @@ async def set_mode(client, message):
 
 
 
+# Temporary state
+USER_STATE = {}
+
+# Link parsing
+def parse_telegram_link(text):
+    match = re.search(r"t\.me/c/(\d+)/(\d+)", text)
+    if not match:
+        return None, None
+    chat_id = int(f"-100{match.group(1)}")  # Private channel/group format
+    msg_id = int(match.group(2))
+    return chat_id, msg_id
+
 # Step 1: Start batch creation
 @Client.on_message(filters.command("pbatch") & filters.private)
 async def start_pbatch(client, message):
     USER_STATE[message.from_user.id] = {"step": "awaiting_first"}
-    await message.reply("📌 Please reply to the **first file** of the batch.")
+    await message.reply("📌 Please reply to the **first file** or send its link.")
 
-# Step 2: Handle first/last file replies
+# Step 2: Handle first/last file
 @Client.on_message(filters.private)
 async def pbatch_first_last(client, message):
     uid = message.from_user.id
@@ -1274,19 +1286,41 @@ async def pbatch_first_last(client, message):
     state = USER_STATE[uid]
 
     # First file step
-    if state["step"] == "awaiting_first" and message.reply_to_message:
-        state["first_id"] = message.reply_to_message.id
-        state["chat_id"] = message.reply_to_message.chat.id
+    if state["step"] == "awaiting_first":
+        if message.reply_to_message:
+            state["first_id"] = message.reply_to_message.id
+            state["chat_id"] = message.reply_to_message.chat.id
+        else:
+            chat_id, msg_id = parse_telegram_link(message.text)
+            if not chat_id:
+                await message.reply("❌ Invalid link or reply.")
+                return
+            state["first_id"] = msg_id
+            state["chat_id"] = chat_id
+
         state["step"] = "awaiting_last"
-        await message.reply("📌 Now reply to the **last file** of the batch.")
+        await message.reply("📌 Now reply to the **last file** or send its link.")
         return
 
     # Last file step
-    if state["step"] == "awaiting_last" and message.reply_to_message:
-        state["last_id"] = message.reply_to_message.id
-        chat_id = state["chat_id"]
+    if state["step"] == "awaiting_last":
+        if message.reply_to_message:
+            state["last_id"] = message.reply_to_message.id
+            chat_id = message.reply_to_message.chat.id
+        else:
+            chat_id, msg_id = parse_telegram_link(message.text)
+            if not chat_id:
+                await message.reply("❌ Invalid link or reply.")
+                return
+            state["last_id"] = msg_id
+
         first_id = state["first_id"]
         last_id = state["last_id"]
+
+        if chat_id != state["chat_id"]:
+            await message.reply("❌ First and last file must be from the same chat.")
+            USER_STATE.pop(uid, None)
+            return
 
         if last_id < first_id:
             first_id, last_id = last_id, first_id
@@ -1326,7 +1360,6 @@ async def open_batch(client, message):
     batch_id = message.text.split("batch_")[1]
     if batch_id not in BATCH_STORE:
         return await message.reply("❌ This batch link does not exist.")
-
     await send_batch_page(client, message.chat.id, batch_id, page=1)
 
 # Send paginated batch page
@@ -1404,4 +1437,4 @@ async def batch_send_all(client, query):
             caption=f['file_name']
         )
     await query.answer("✅ All files sent!", show_alert=True)
-    
+        
