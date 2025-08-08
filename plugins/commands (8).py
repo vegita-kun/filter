@@ -1239,3 +1239,88 @@ async def set_mode(client, message):
             await message.reply("Please specify the mode name and 'True' or 'False' as arguments. Example: /set_value PM_FILTER True")
     except Exception as e:
         await message.reply(f"An error occurred: {e}")
+
+
+@Client.on_message(filters.command("pbatch") & filters.private)
+async def pbatch_handler(client, message):
+    if len(message.command) < 2:
+        return await message.reply("Usage:\n`/pbatch <link1> <link2> ...`")
+
+    links = message.text.split()[1:]
+    files_data = []
+    chat_id_pattern = re.compile(r"c/(\d+)/(\d+)")
+
+    for link in links:
+        match = chat_id_pattern.search(link)
+        if not match:
+            await message.reply(f"Invalid link format: {link}")
+            continue
+        
+        chat_id = int(f"-100{match.group(1)}")  # convert to full chat_id
+        msg_id = int(match.group(2))
+
+        try:
+            msg = await client.get_messages(chat_id, msg_id)
+            file_obj = None
+            for media_type in ["document", "video", "audio"]:
+                file_obj = getattr(msg, media_type, None)
+                if file_obj:
+                    break
+            if not file_obj:
+                await message.reply(f"No file found in: {link}")
+                continue
+
+            files_data.append({
+                "file_id": file_obj.file_id,
+                "file_name": file_obj.file_name,
+                "file_size": get_size(file_obj.file_size)
+            })
+
+        except Exception as e:
+            await message.reply(f"Error fetching {link}: {e}")
+            continue
+
+    if not files_data:
+        return await message.reply("No valid files found.")
+
+    # Store in temp for send-all usage
+    temp.PBATCH_RESULTS[message.from_user.id] = files_data
+
+    # Create file list text
+    file_list_text = ""
+    for f in files_data:
+        file_list_text += f"📁 {f['file_size']} ▶ {f['file_name']}\n\n"
+
+    # Create buttons
+    buttons = [
+        [InlineKeyboardButton("!SEND ALL!", callback_data=f"pbatch_sendall#{message.from_user.id}")],
+        [
+            InlineKeyboardButton("Languages", callback_data="pbatch_lang"),
+            InlineKeyboardButton("Qualitys", callback_data="pbatch_quality")
+        ]
+    ]
+
+    await message.reply(
+        file_list_text.strip(),
+        reply_markup=InlineKeyboardMarkup(buttons),
+        disable_web_page_preview=True
+    )
+
+# Callback handler for send-all
+@Client.on_callback_query(filters.regex(r"^pbatch_sendall"))
+async def pbatch_send_all(client, query):
+    uid = int(query.data.split("#")[1])
+    files = temp.PBATCH_RESULTS.get(uid)
+
+    if not files:
+        return await query.answer("Batch expired, please run /pbatch again.", show_alert=True)
+
+    for f in files:
+        await client.send_cached_media(
+            chat_id=query.from_user.id,
+            file_id=f['file_id'],
+            caption=f['file_name']
+        )
+
+    await query.answer("All files sent!", show_alert=True)
+    
