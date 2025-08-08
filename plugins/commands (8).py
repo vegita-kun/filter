@@ -29,6 +29,20 @@ import base64
 logger = logging.getLogger(__name__)
 
 TIMEZONE = "Asia/KKolkata"
+BATCH_FILE = "batches.json"
+
+# Load stored batches from JSON
+if os.path.exists(BATCH_FILE):
+    with open(BATCH_FILE, "r", encoding="utf-8") as f:
+        BATCH_STORE = json.load(f)
+else:
+    BATCH_STORE = {}
+
+def save_batches():
+    with open(BATCH_FILE, "w", encoding="utf-8") as f:
+        json.dump(BATCH_STORE, f, ensure_ascii=False)
+# Temporary state for creating batches
+USER_STATE = {}
 
 
 @Client.on_message(filters.command("start") & filters.incoming)
@@ -1243,23 +1257,6 @@ async def set_mode(client, message):
         await message.reply(f"An error occurred: {e}")
 
 
-
-
-BATCH_FILE = "batches.json"
-
-# Load stored batches from JSON
-if os.path.exists(BATCH_FILE):
-    with open(BATCH_FILE, "r", encoding="utf-8") as f:
-        BATCH_STORE = json.load(f)
-else:
-    BATCH_STORE = {}
-
-def save_batches():
-    with open(BATCH_FILE, "w", encoding="utf-8") as f:
-        json.dump(BATCH_STORE, f, ensure_ascii=False)
-
-# Temporary state for creating batches
-USER_STATE = {}
 
 # Step 1: Start batch creation
 @Client.on_message(filters.command("pbatch") & filters.private)
